@@ -83,9 +83,9 @@
     
     NSMutableArray *horizontalItems = [NSMutableArray array];
     [horizontalItems addObject:squareItem2];
-    int numPlaceholders = (self.view.frame.size.width - 100) / (img.size.width + 25.0);
+    int numPlaceholders = (self.view.frame.size.width - 50) / (img.size.width);
     NSLog(@"Num Placeholders = %d",numPlaceholders);
-    for (int i = 0; i < numPlaceholders/2; i++) {
+    for (int i = 0; i < numPlaceholders/4; i++) { // TODO:  Just monte carlo'ing numbers here that work.
         [horizontalItems addObject:blankItem];
     }
     [horizontalItems addObject:circleItem2];
