@@ -13,7 +13,9 @@
 
 typedef enum {
     UPStackMenuStackPosition_up = 0,
-    UPStackMenuStackPosition_down
+    UPStackMenuStackPosition_down,
+    UPStackMenuStackPosition_left,
+    UPStackMenuStackPosition_right // TODO:  only need up and left to begin with.
 } UPStackMenuStackPosition_e;
 
 typedef enum {

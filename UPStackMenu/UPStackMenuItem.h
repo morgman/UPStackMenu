@@ -11,7 +11,8 @@
 
 typedef enum {
     UPStackMenuItemLabelPosition_left = 0,
-    UPStackMenuItemLabelPosition_right
+    UPStackMenuItemLabelPosition_right,
+    UPStackMenuItemLabelPosition_none
 } UPStackMenuItemLabelPosition_e;
 
 

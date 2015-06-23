@@ -157,36 +157,77 @@ const static NSTimeInterval             kStackMenuDefaultCloseAnimationDurationO
 {
     CGPoint center = CGPointMake(_baseButton.frame.size.width/2, _baseButton.frame.size.height/2);
     
-    __block CGFloat height = _baseButton.frame.size.height;
     __block CGFloat leftOffset = 0;
     __block CGFloat rightOffset = 0;
     
-    [_items enumerateObjectsUsingBlock:^(UPStackMenuItem *item, NSUInteger idx, BOOL *stop) {
-        height += item.frame.size.height + _itemsSpacing;
+    
+    if (_stackPosition == UPStackMenuStackPosition_up || _stackPosition == UPStackMenuStackPosition_down) {
+        __block CGFloat height = _baseButton.frame.size.height;
+        [_items enumerateObjectsUsingBlock:^(UPStackMenuItem *item, NSUInteger idx, BOOL *stop) {
+            height += item.frame.size.height + _itemsSpacing;
+            NSLog(@"Height = %f",height);
+            if([item labelPosition] == UPStackMenuItemLabelPosition_left) {
+                CGFloat itemLeftOffset = fabs(center.x - item.itemCenter.x);
+                if(itemLeftOffset > leftOffset)
+                    leftOffset = itemLeftOffset;
+            }
+            else if([item labelPosition] == UPStackMenuItemLabelPosition_right) {
+                CGFloat itemRightOffset = fabs(item.frame.size.width - item.itemCenter.x - center.x);
+                if(itemRightOffset > rightOffset)
+                    rightOffset = itemRightOffset;
+            } else {
+                // Label position None
+                // offsets are zero
+            }
+        }];
+
+        if([_items count] > 0)
+            height += _itemsSpacing;
         
-        if([item labelPosition] == UPStackMenuItemLabelPosition_left) {
-            CGFloat itemLeftOffset = fabs(center.x - item.itemCenter.x);
-            if(itemLeftOffset > leftOffset)
-                leftOffset = itemLeftOffset;
+        CGFloat width = leftOffset + _baseButton.frame.size.width + rightOffset;
+        
+        _openedSize = CGSizeMake(width, height);
+        NSLog(@"Vertical Opened Size %@",NSStringFromCGSize(_openedSize));
+        
+        CGFloat baseButtonCenterY = _baseButton.frame.size.height/2;
+        if(_stackPosition == UPStackMenuStackPosition_up)
+            baseButtonCenterY = _openedSize.height - _baseButton.frame.size.height/2;
+        _baseButtonOpenedCenter = CGPointMake(leftOffset + _baseButton.frame.size.width/2, baseButtonCenterY);
+    } else {
+        // Add support for left and right position (no labels)
+        __block CGFloat width = _baseButton.frame.size.width;
+        [_items enumerateObjectsUsingBlock:^(UPStackMenuItem *item, NSUInteger idx, BOOL *stop) {
+            width += item.frame.size.width + _itemsSpacing;
+            NSLog(@"Width = %f",width);
+            if([item labelPosition] == UPStackMenuItemLabelPosition_left) {
+                CGFloat itemLeftOffset = fabs(center.x - item.itemCenter.x);
+                if(itemLeftOffset > leftOffset)
+                    leftOffset = itemLeftOffset;
+            }
+            else if([item labelPosition] == UPStackMenuItemLabelPosition_right) {
+                CGFloat itemRightOffset = fabs(item.frame.size.width - item.itemCenter.x - center.x);
+                if(itemRightOffset > rightOffset)
+                    rightOffset = itemRightOffset;
+            } else {
+                // Label position None
+                // offsets are zero
+            }
+        }];
+
+        if ([_items count] > 0) {
+            width += _itemsSpacing;
         }
-        else if([item labelPosition] == UPStackMenuItemLabelPosition_right) {
-            CGFloat itemRightOffset = fabs(item.frame.size.width - item.itemCenter.x - center.x);
-            if(itemRightOffset > rightOffset)
-                rightOffset = itemRightOffset;
-        }
-    }];
-    
-    if([_items count] > 0)
-        height += _itemsSpacing;
-    
-    CGFloat width = leftOffset + _baseButton.frame.size.width + rightOffset;
-    
-    _openedSize = CGSizeMake(width, height);
-    
-    CGFloat baseButtonCenterY = _baseButton.frame.size.height/2;
-    if(_stackPosition == UPStackMenuStackPosition_up)
-        baseButtonCenterY = _openedSize.height - _baseButton.frame.size.height/2;
-    _baseButtonOpenedCenter = CGPointMake(leftOffset + _baseButton.frame.size.width/2, baseButtonCenterY);
+        
+        CGFloat height = _baseButton.frame.size.height;
+        
+        _openedSize = CGSizeMake(width, height);
+        NSLog(@"Horizontal Opened Size %@",NSStringFromCGSize(_openedSize));
+
+        CGFloat baseButtonCenterX = _baseButton.frame.size.width/2;
+        if(_stackPosition == UPStackMenuStackPosition_left)
+            baseButtonCenterX = _openedSize.width - _baseButton.frame.size.width/2;
+        _baseButtonOpenedCenter = CGPointMake(baseButtonCenterX, _baseButton.frame.size.height/2);
+    }
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
@@ -244,39 +285,77 @@ const static NSTimeInterval             kStackMenuDefaultCloseAnimationDurationO
         [_delegate stackMenuWillOpen:self];
     
     CGRect frame = self.frame;
+    
     frame.size = _openedSize;
-    frame.origin.x -= _baseButtonOpenedCenter.x - _baseButton.frame.size.width/2;
-    CGFloat yOffset = _baseButtonOpenedCenter.y - _baseButton.frame.size.height/2;
-    frame.origin.y -= (_stackPosition == UPStackMenuStackPosition_up) ? yOffset : yOffset*(-1);
+    NSInteger way = 0;
+    if (_stackPosition == UPStackMenuStackPosition_down || _stackPosition == UPStackMenuStackPosition_up) {
+        frame.origin.x -= _baseButtonOpenedCenter.x - _baseButton.frame.size.width/2;
+        CGFloat yOffset = _baseButtonOpenedCenter.y - _baseButton.frame.size.height/2;
+        frame.origin.y -= (_stackPosition == UPStackMenuStackPosition_up) ? yOffset : yOffset*(-1);
+        way = (_stackPosition == UPStackMenuStackPosition_up) ? -1 : 1;
+    } else {
+        frame.origin.y -= _baseButtonOpenedCenter.y - _baseButton.frame.size.height/2;
+        CGFloat xOffset = _baseButtonOpenedCenter.x - _baseButton.frame.size.width/2;
+        frame.origin.x -= (_stackPosition == UPStackMenuStackPosition_left) ? xOffset : xOffset*(-1);
+        way = (_stackPosition == UPStackMenuStackPosition_left) ? -1 : 1;
+    }
     [self setFrame:frame];
     
     [_baseButton setCenter:_baseButtonOpenedCenter];
-    
     NSUInteger itemsCount = [_items count];
     
-    NSInteger way = (_stackPosition == UPStackMenuStackPosition_up) ? -1 : 1;
-    __block CGFloat y = _baseButton.frame.origin.y - _itemsSpacing;
-    if(_stackPosition == UPStackMenuStackPosition_down)
-        y = _baseButton.frame.origin.y + _baseButton.frame.size.height + _itemsSpacing;
     
-    [_items enumerateObjectsUsingBlock:^(UPStackMenuItem *item, NSUInteger idx, BOOL *stop) {
-        NSTimeInterval duration = _openAnimationDuration;
-        if(_animationType == UPStackMenuAnimationType_progressive)
-            duration = ((idx + 1) * _openAnimationDuration) / itemsCount;
-        else if(_animationType == UPStackMenuAnimationType_progressiveInverse)
-        duration = ((itemsCount - idx) * _openAnimationDuration) / itemsCount;
+    if (_stackPosition == UPStackMenuStackPosition_down || _stackPosition == UPStackMenuStackPosition_up) {
+    
+    
+    __block CGFloat y = _baseButton.frame.origin.y - _itemsSpacing;
+        if(_stackPosition == UPStackMenuStackPosition_down)
+            y = _baseButton.frame.origin.y + _baseButton.frame.size.height + _itemsSpacing;
         
-        CGPoint center = CGPointMake(_baseButton.center.x, y + (item.frame.size.height/2 * way));
-        CGPoint translatedCenter = [item centerForItemCenter:center];
+        [_items enumerateObjectsUsingBlock:^(UPStackMenuItem *item, NSUInteger idx, BOOL *stop) {
+            NSTimeInterval duration = _openAnimationDuration;
+            if(_animationType == UPStackMenuAnimationType_progressive)
+                duration = ((idx + 1) * _openAnimationDuration) / itemsCount;
+            else if(_animationType == UPStackMenuAnimationType_progressiveInverse)
+                duration = ((itemsCount - idx) * _openAnimationDuration) / itemsCount;
+            
+            CGPoint center = CGPointMake(_baseButton.center.x, y + (item.frame.size.height/2 * way));
+            CGPoint translatedCenter = [item centerForItemCenter:center];
+            
+            int64_t delay = idx * (_openAnimationDurationOffset*1000);
+            dispatch_time_t time = dispatch_time(DISPATCH_TIME_NOW, (delay * NSEC_PER_MSEC));
+            dispatch_after(time, dispatch_get_main_queue(), ^{
+                [self moveItem:item toCenter:translatedCenter withDuration:duration opening:YES bouncing:_bouncingAnimation];
+            });
+            
+            y += (item.frame.size.height + _itemsSpacing) * way;
+        }];
+    } else {
         
-        int64_t delay = idx * (_openAnimationDurationOffset*1000);
-        dispatch_time_t time = dispatch_time(DISPATCH_TIME_NOW, (delay * NSEC_PER_MSEC));
-        dispatch_after(time, dispatch_get_main_queue(), ^{
-            [self moveItem:item toCenter:translatedCenter withDuration:duration opening:YES bouncing:_bouncingAnimation];
-        });
+        __block CGFloat x = _baseButton.frame.origin.x - _itemsSpacing;
+        if(_stackPosition == UPStackMenuStackPosition_right) {
+            x = _baseButton.frame.origin.x + _baseButton.frame.size.width + _itemsSpacing;
+        }
         
-        y += (item.frame.size.height + _itemsSpacing) * way;
-    }];
+        [_items enumerateObjectsUsingBlock:^(UPStackMenuItem *item, NSUInteger idx, BOOL *stop) {
+            NSTimeInterval duration = _openAnimationDuration;
+            if(_animationType == UPStackMenuAnimationType_progressive)
+                duration = ((idx + 1) * _openAnimationDuration) / itemsCount;
+            else if(_animationType == UPStackMenuAnimationType_progressiveInverse)
+                duration = ((itemsCount - idx) * _openAnimationDuration) / itemsCount;
+            
+            CGPoint center = CGPointMake(x + (item.frame.size.width/2 * way), _baseButton.center.y);
+            CGPoint translatedCenter = [item centerForItemCenter:center];
+            
+            int64_t delay = idx * (_openAnimationDurationOffset*1000);
+            dispatch_time_t time = dispatch_time(DISPATCH_TIME_NOW, (delay * NSEC_PER_MSEC));
+            dispatch_after(time, dispatch_get_main_queue(), ^{
+                [self moveItem:item toCenter:translatedCenter withDuration:duration opening:YES bouncing:_bouncingAnimation];
+            });
+            
+            x += (item.frame.size.width + _itemsSpacing) * way;
+        }];
+    }
     
     _isOpen = YES;
 }
@@ -319,13 +398,30 @@ const static NSTimeInterval             kStackMenuDefaultCloseAnimationDurationO
     CGPoint nearCenter;
     
     NSInteger way = (_stackPosition == UPStackMenuStackPosition_up) ? -1 : 1;
-    if(bouncing) {
-        CGFloat bouncingOffset = _itemsSpacing * way;
-        if(opening) {
-            farCenter = CGPointMake(center.x, center.y + bouncingOffset);
-            nearCenter = CGPointMake(center.x, center.y + (bouncingOffset/2)*-1);
-        } else
-            farCenter = CGPointMake(item.center.x, item.center.y + bouncingOffset);
+    if (_stackPosition == UPStackMenuStackPosition_up || _stackPosition == UPStackMenuStackPosition_down) {
+        way = (_stackPosition == UPStackMenuStackPosition_up) ? -1 : 1;
+        
+        if(bouncing) {
+            CGFloat bouncingOffset = _itemsSpacing * way;
+            if(opening) {
+                farCenter = CGPointMake(center.x, center.y + bouncingOffset);
+                nearCenter = CGPointMake(center.x, center.y + (bouncingOffset/2)*-1);
+            } else
+                farCenter = CGPointMake(item.center.x, item.center.y + bouncingOffset);
+        }
+
+    } else {
+        way = (_stackPosition == UPStackMenuStackPosition_left) ? -1 : 1;
+        
+        if(bouncing) {
+            CGFloat bouncingOffset = _itemsSpacing * way;
+            if(opening) {
+                farCenter = CGPointMake(center.x + bouncingOffset, center.y);
+                nearCenter = CGPointMake(center.x + (bouncingOffset/2)*-1, center.y);
+            } else
+                farCenter = CGPointMake(item.center.x + bouncingOffset, item.center.y );
+        }
+
     }
     
     CAKeyframeAnimation *positionAnimation = [CAKeyframeAnimation animationWithKeyPath:@"position"];
@@ -368,9 +464,16 @@ const static NSTimeInterval             kStackMenuDefaultCloseAnimationDurationO
     else {
         CGRect frame = self.frame;
         frame.size = _baseButton.frame.size;
-        frame.origin.x += _baseButton.frame.origin.x;
-        if(_stackPosition == UPStackMenuStackPosition_up)
+
+        if (_stackPosition == UPStackMenuStackPosition_up || _stackPosition == UPStackMenuStackPosition_down) {
+            frame.origin.x += _baseButton.frame.origin.x;
+            if(_stackPosition == UPStackMenuStackPosition_up)
+                frame.origin.y += _baseButton.frame.origin.y;
+        } else {
             frame.origin.y += _baseButton.frame.origin.y;
+            if(_stackPosition == UPStackMenuStackPosition_left)
+                frame.origin.x += _baseButton.frame.origin.x;
+        }
         [self setFrame:frame];
         
         [_baseButton setCenter:CGPointMake(frame.size.width/2, frame.size.height/2)];

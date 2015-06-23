@@ -118,12 +118,21 @@ const static UPStackMenuItemLabelPosition_e kStackMenuItemDefaultLabelPosition  
             [_labelContainer setCenter:CGPointMake(_labelContainer.frame.size.width/2, self.frame.size.height/2)];
             [_imageButton setCenter:CGPointMake(self.frame.size.width - _imageButton.frame.size.width/2, self.frame.size.height/2)];
             [_label setAutoresizingMask:UIViewAutoresizingFlexibleRightMargin];
+            [_label setHidden:NO];
             break;
         case UPStackMenuItemLabelPosition_right:
             [_labelContainer setCenter:CGPointMake(self.frame.size.width - _labelContainer.frame.size.width/2, self.frame.size.height/2)];
             [_imageButton setCenter:CGPointMake(_imageButton.frame.size.width/2, self.frame.size.height/2)];
             [_label setAutoresizingMask:UIViewAutoresizingFlexibleLeftMargin];
+            [_label setHidden:NO];
             break;
+        case UPStackMenuItemLabelPosition_none:
+            [_labelContainer setCenter:CGPointMake(self.frame.size.width - _labelContainer.frame.size.width/2, self.frame.size.height/2)];
+            [_imageButton setCenter:CGPointMake(_imageButton.frame.size.width/2, self.frame.size.height/2)];
+            [_label setAutoresizingMask:UIViewAutoresizingFlexibleLeftMargin];
+            [_label setHidden:YES];
+            break;
+
     }
 }
 
