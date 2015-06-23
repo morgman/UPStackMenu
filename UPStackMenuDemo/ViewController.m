@@ -51,11 +51,13 @@
     showBoth = NO;
     stack = [[UPStackMenu alloc] initWithContentView:contentView];
     [stack setCenter:CGPointMake(self.view.frame.size.width/2, self.view.frame.size.height/2 + 20)];
+    [stack setCenter:CGPointMake(self.view.frame.size.width - 50, self.view.frame.size.height - 50)];
     [stack setDelegate:self];
         
     horizontalStack = [[UPStackMenu alloc] initWithContentView:hiddenContentView];
     [horizontalStack setCenter:CGPointMake(self.view.frame.size.width/2, self.view.frame.size.height/2 + 20)];
-       
+    [horizontalStack setCenter:CGPointMake(self.view.frame.size.width - 50, self.view.frame.size.height - 50)];
+
     
     UPStackMenuItem *squareItem = [[UPStackMenuItem alloc] initWithImage:[UIImage imageNamed:@"square"] highlightedImage:nil title:@"Square"];
     UPStackMenuItem *circleItem = [[UPStackMenuItem alloc] initWithImage:[UIImage imageNamed:@"circle"] highlightedImage:nil title:@"Circle"];
@@ -66,12 +68,31 @@
         [item setTitleColor:[UIColor whiteColor]];
     }];
 
+    
+    UIImage *img = [UIImage imageNamed:@"square"];
+    UIGraphicsBeginImageContextWithOptions(img.size, NO, 0.0);
+    UIImage *blank = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
     UPStackMenuItem *squareItem2 = [[UPStackMenuItem alloc] initWithImage:[UIImage imageNamed:@"square"] highlightedImage:nil title:@""];
     UPStackMenuItem *circleItem2 = [[UPStackMenuItem alloc] initWithImage:[UIImage imageNamed:@"circle"] highlightedImage:nil title:@""];
     UPStackMenuItem *triangleItem2 = [[UPStackMenuItem alloc] initWithImage:[UIImage imageNamed:@"triangle"] highlightedImage:nil title:@""];
     UPStackMenuItem *crossItem2 = [[UPStackMenuItem alloc] initWithImage:[UIImage imageNamed:@"cross"] highlightedImage:nil title:@""];
+    UPStackMenuItem *blankItem = [[UPStackMenuItem alloc] initWithImage:blank highlightedImage:nil title:@""];
 
-    NSMutableArray *horizontalItems = [[NSMutableArray alloc] initWithObjects:squareItem2, circleItem2, triangleItem2, crossItem2, nil];
+    
+    NSMutableArray *horizontalItems = [NSMutableArray array];
+    [horizontalItems addObject:squareItem2];
+    int numPlaceholders = (self.view.frame.size.width - 100) / (img.size.width + 25.0);
+    NSLog(@"Num Placeholders = %d",numPlaceholders);
+    for (int i = 0; i < numPlaceholders/2; i++) {
+        [horizontalItems addObject:blankItem];
+    }
+    [horizontalItems addObject:circleItem2];
+    
+    
+    
+//    NSMutableArray *horizontalItems = [[NSMutableArray alloc] initWithObjects:squareItem2, circleItem2, nil];
     [horizontalItems enumerateObjectsUsingBlock:^(UPStackMenuItem *item, NSUInteger idx, BOOL *stop) {
         [item setTitleColor:[UIColor whiteColor]];
     }];
@@ -115,10 +136,10 @@
         case 3:
             [stack setAnimationType:UPStackMenuAnimationType_progressive];
             [stack setStackPosition:UPStackMenuStackPosition_up];
+            [stack setItemsSpacing:25.0];
             [stack setOpenAnimationDuration:.4];
             [stack setCloseAnimationDuration:.4];
             [items enumerateObjectsUsingBlock:^(UPStackMenuItem *item, NSUInteger idx, BOOL *stop) {
-                [item setLabelPosition:UPStackMenuItemLabelPosition_right];
                 [item setLabelPosition:UPStackMenuItemLabelPosition_left];
             }];
 
@@ -127,6 +148,7 @@
             [horizontalStack setStackPosition:UPStackMenuStackPosition_left];
             [horizontalStack setOpenAnimationDuration:.4];
             [horizontalStack setCloseAnimationDuration:.4];
+            [horizontalStack setItemsSpacing:25.0];
             [horizontalItems enumerateObjectsUsingBlock:^(UPStackMenuItem *item, NSUInteger idx, BOOL *stop) {
                     [item setLabelPosition:UPStackMenuItemLabelPosition_none];
             }];
